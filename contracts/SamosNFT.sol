@@ -4,12 +4,17 @@ pragma solidity ^0.8.12;
 import "./BaseERC721A.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-contract NFTProject is BaseERC721A {
+contract SamosNFT is BaseERC721A {
     using ECDSA for bytes32;
 
     // @dev store ticket has been used
     mapping(bytes => bool) private _ticketUsed;
     bool byPassSignatureChecking = false;
+
+    // project setting
+    string public constant _name = "Samos";
+    string public constant _symbol = "SAMOS";
+    uint256 public constant _max_supply = 10100;
 
     enum ProjectState {
         Prepare, //0
@@ -45,9 +50,6 @@ contract NFTProject is BaseERC721A {
     error MintAmountShouldGreatThanZero();
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        uint256 _maxSupply,
         uint256 _price,
         string memory baseURI,
         address ethWallet,
@@ -56,7 +58,7 @@ contract NFTProject is BaseERC721A {
         BaseERC721A(
             _name,
             _symbol,
-            _maxSupply,
+            _max_supply,
             _price,
             baseURI,
             ethWallet,
