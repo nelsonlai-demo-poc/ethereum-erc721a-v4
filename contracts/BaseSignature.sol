@@ -37,7 +37,7 @@ abstract contract BaseSignature is Ownable {
      */
     function isSignedBySigner(
         address _sender,
-        bytes memory _nonce,
+        string memory _nonce,
         bytes memory _signature
     ) internal view returns (bool) {
         if (byPassSignature) {

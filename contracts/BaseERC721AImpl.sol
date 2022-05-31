@@ -27,4 +27,14 @@ contract BaseERC721AImpl is BaseERC721A, BaseSignature {
     function mint(uint256 quantity) public payable {
         _mint(quantity);
     }
+
+    /** @dev test signature
+     */
+    function testSign(string memory nonce, bytes memory signature)
+        public
+        view
+        returns (bool)
+    {
+        return isSignedBySigner(msg.sender, nonce, signature);
+    }
 }
