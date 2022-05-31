@@ -6,16 +6,13 @@ import "./erc721a/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-/** @dev BaseERC721A provides basic settings of a NFT project
+/** @dev BaseERC721A extends the ERC721AQueryable and provides some operations for nft project.
  */
-abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
+abstract contract BaseERC721A is ERC721AQueryable, Ownable {
     uint256 public maxSupply;
     uint256 public price;
-    string private _baseURI;
-    // @dev wallet to receive the eth
-    address internal _ethWallet;
-    // @dev the address of the signer, used for signature
-    address internal _signer;
+    address public ethWallet;
+    string internal _uri;
 
     constructor(
         string memory name,
@@ -23,14 +20,12 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
         uint256 _maxSupply,
         uint256 _price,
         string memory baseURI,
-        address ethWallet,
-        address signer
+        address wallet
     ) ERC721A(name, symbol) {
         maxSupply = _maxSupply;
         price = _price;
-        _baseURI = baseURI;
-        _ethWallet = ethWallet;
-        _signer = signer;
+        _uri = baseURI;
+        ethWallet = wallet;
     }
 
     /**
@@ -43,6 +38,11 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
      */
     error EceedsMaximumSupply();
 
+    /**
+     *  Not enough ETH.
+     */
+    error NotEnoughETH();
+
     /** @dev set mint price of the token
      *   only owner can call this function
      */
@@ -53,22 +53,15 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
     /** @dev set base uri of the token
      *   only owner can call this function
      */
-    function setBaseURI(string memory _uri) public onlyOwner {
-        _baseURI = _uri;
+    function setBaseURI(string memory uri) public onlyOwner {
+        _uri = uri;
     }
 
     /** @dev set wallet to receive the eth
      *   only owner can call this function
      */
     function setWallet(address _address) public onlyOwner {
-        _ethWallet = _address;
-    }
-
-    /** @dev set signer address for signature
-     *   onley owner can call this function
-     */
-    function setSigner(address _address) public onlyOwner {
-        _signer = _address;
+        ethWallet = _address;
     }
 
     /** @dev mint the tokens to the target address
@@ -85,6 +78,12 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
         }
         if (totalSupply() + quantity > maxSupply) {
             revert EceedsMaximumSupply();
+        }
+        if ((price * quantity) > msg.value) {
+            revert NotEnoughETH();
+        }
+        if (msg.value > 0) {
+            payable(ethWallet).transfer(msg.value);
         }
         _baseMint(msg.sender, quantity);
     }
@@ -127,6 +126,12 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
         }
     }
 
+    /** @dev return base uri of meta data
+     */
+    function _baseURI() internal view override returns (string memory) {
+        return _uri;
+    }
+
     /** @dev returns token uri of the token
      */
     function tokenURI(uint256 tokenId)
@@ -136,9 +141,10 @@ abstract contract BaseERC721A is ERC721A, ERC721AQueryable, Ownable {
         returns (string memory)
     {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+        string memory baseURI = _baseURI();
         return
-            bytes(_baseURI).length > 0
-                ? string.concat(_baseURI, Strings.toString(tokenId), ".json")
+            bytes(baseURI).length > 0
+                ? string.concat(baseURI, Strings.toString(tokenId), ".json")
                 : "";
     }
 }
